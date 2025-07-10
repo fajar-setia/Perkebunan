@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build
+bin/
+obj/
+
+# ASP.NET Core
+wwwroot/images/
+appsettings.*.json
+
+# OS/Misc
+*.log
+*.db
+.env
