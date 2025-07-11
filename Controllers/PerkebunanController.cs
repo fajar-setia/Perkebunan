@@ -31,18 +31,39 @@ namespace Perkebunan.Controllers
             return Ok(product);
         }
         [HttpPost]
-        public async Task<ActionResult<Product>> CreateProduct(Product product)
+        public async Task<ActionResult<Product>> CreateProduct([FromForm] ProductUploadDto dto)
         {
-            if (product == null)
+            if (dto.Image == null)
+                return BadRequest("Image is required.");
+
+            // Buat folder upload jika belum ada
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            if (!Directory.Exists(uploadsDir))
+                Directory.CreateDirectory(uploadsDir);
+
+            var fileName = Guid.NewGuid() + Path.GetExtension(dto.Image.FileName);
+            var filePath = Path.Combine(uploadsDir, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                return BadRequest("Product cannot be null.");
+                await dto.Image.CopyToAsync(stream);
             }
-            product.CreatedAt = DateTime.UtcNow;
-            product.UpdatedAt = DateTime.UtcNow;
+
+            var product = new Product
+            {
+                NameProduct = dto.NameProduct,
+                Description = dto.Description,
+                Price = dto.Price,
+                Stock = dto.Stock,
+                ImageUrl = $"/uploads/{fileName}", // path yang akan diakses dari frontend
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetProducts), new { id = product.Id }, product);
+
+            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, Product product)
