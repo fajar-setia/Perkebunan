@@ -99,5 +99,20 @@ namespace Perkebunan.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        [HttpGet("image/{filename}")]
+        public IActionResult GetImage(string filename)
+        {
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            var filePath = Path.Combine(uploadsDir, filename);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound("File not found.");
+
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            var contentType = "image/" + Path.GetExtension(filename).TrimStart('.');
+
+            return File(stream, contentType);
+        }
+
     }
 }

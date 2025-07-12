@@ -30,6 +30,13 @@ namespace Perkebunan
                           .AllowAnyMethod();
                 });
             });
+            var portEnv = Environment.GetEnvironmentVariable("PORT");
+            if (int.TryParse(portEnv, out var port))
+            {
+                builder.WebHost.ConfigureKestrel(opts => {
+                    opts.ListenAnyIP(port);
+                });
+            }
 
             var app = builder.Build();
 
