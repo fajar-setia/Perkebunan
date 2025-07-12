@@ -39,6 +39,7 @@ namespace Perkebunan
             }
 
             var app = builder.Build();
+            app.UseStaticFiles();
 
             // ✅ Aktifkan CORS
             app.UseCors("AllowReactApp");
@@ -51,7 +52,7 @@ namespace Perkebunan
 
             app.UseHttpsRedirection();
             app.UseAuthorization();
-            app.UseStaticFiles();
+            
             app.MapControllers();
 
             app.Run();
