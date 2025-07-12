@@ -7,10 +7,6 @@
 bin/
 obj/
 
-# ASP.NET Core
-wwwroot/images/
-appsettings.*.json
-
 # OS/Misc
 *.log
 *.db
