@@ -25,7 +25,7 @@ namespace Perkebunan
             {
                 options.AddPolicy("AllowReactApp", policy =>
                 {
-                    policy.WithOrigins("http://localhost:5174") // Ganti sesuai port React kamu
+                    policy.WithOrigins("http://localhost:5050") // Ganti sesuai port React kamu
                           .AllowAnyHeader()
                           .AllowAnyMethod();
                 });
