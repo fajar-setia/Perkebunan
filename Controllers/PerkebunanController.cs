@@ -37,9 +37,7 @@ namespace Perkebunan.Controllers
                 return BadRequest("Image is required.");
 
             // Buat folder upload jika belum ada
-            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(),"uploads");
-            if (!Directory.Exists(uploadsDir))
-                Directory.CreateDirectory(uploadsDir);
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
 
             var fileName = Guid.NewGuid() + Path.GetExtension(dto.Image.FileName);
             var filePath = Path.Combine(uploadsDir, fileName);
@@ -102,7 +100,7 @@ namespace Perkebunan.Controllers
         [HttpGet("image/{filename}")]
         public IActionResult GetImage(string filename)
         {
-            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+            var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(),"wwwroot", "uploads");
             var filePath = Path.Combine(uploadsDir, filename);
 
             if (!System.IO.File.Exists(filePath))
