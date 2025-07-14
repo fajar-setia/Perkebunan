@@ -1,17 +1,29 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Perkebunan.Config;
 using Perkebunan.Data;
 using Perkebunan.Models;
-using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Options;
+
+
 namespace Perkebunan.Controllers
+
 {
     [ApiController]
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
-        public UserController(AppDbContext context)
+        private readonly JwtSettings _jwtSettings;
+
+        public UserController(AppDbContext context, JwtSettings jwtSettings)
         {
             _context = context;
+            _jwtSettings = jwtSettings;
         }
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
@@ -19,16 +31,7 @@ namespace Perkebunan.Controllers
             var users = await _context.Users.ToListAsync();
             return Ok(users);
         }
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(Guid id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound($"User with ID {id} not found.");
-            }
-            return Ok(user);
-        }
+        
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser([FromBody] User user)
         {
@@ -40,56 +43,38 @@ namespace Perkebunan.Controllers
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] User updatedUser)
-        {
-            if (id != updatedUser.Id)
-            {
-                return BadRequest("User ID mismatch.");
-            }
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound($"User with ID {id} not found.");
-            }
-            user.Username = updatedUser.Username;
-            user.FullName = updatedUser.FullName;
-            user.Email = updatedUser.Email;
-            user.Password = updatedUser.Password;
-            user.Role = updatedUser.Role;
-            user.UpdatedAt = DateTime.UtcNow;
-
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound($"User with ID {id} not found.");
-            }
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
+        
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login([FromBody] User loginUser)
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            if (loginUser == null || string.IsNullOrEmpty(loginUser.Username) || string.IsNullOrEmpty(loginUser.Password))
-            {
-                return BadRequest("Invalid login data.");
-            }
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == loginUser.Username && u.Password == loginUser.Password);
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email == dto.Email && u.Password == dto.Password); // Note: hash password di real app
+
             if (user == null)
+                return Unauthorized("Email atau password salah");
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_jwtSettings.SecretKey);
+
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                return Unauthorized("Invalid username or password.");
-            }
-            return Ok(user);
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                     new Claim("sub", user.Id.ToString()),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role)
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience,
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwt = tokenHandler.WriteToken(token);
+
+            return Ok(new { token = jwt, userId = user.Id });
         }
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register([FromBody] User newUser)
@@ -120,5 +105,53 @@ namespace Perkebunan.Controllers
             return Ok(cartItems);
 
         }
+        [HttpGet("{id:guid}")]
+        public async Task<ActionResult<User>> GetUser(Guid id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found.");
+            }
+            return Ok(user);
+        }
+        
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] User updatedUser)
+        {
+            if (id != updatedUser.Id)
+            {
+                return BadRequest("User ID mismatch.");
+            }
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found.");
+            }
+            user.Username = updatedUser.Username;
+            user.FullName = updatedUser.FullName;
+            user.Email = updatedUser.Email;
+            user.Password = updatedUser.Password;
+            user.Role = updatedUser.Role;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+        [HttpDelete("{id:guid}")]
+        public async Task<IActionResult> DeleteUser(Guid id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found.");
+            }
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 }
