@@ -21,7 +21,7 @@ namespace Perkebunan.Controllers
             return Ok(products);
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<Product>> GetProduct(Guid id)
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null)
@@ -64,7 +64,7 @@ namespace Perkebunan.Controllers
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, Product product)
+        public async Task<IActionResult> UpdateProduct(Guid id, Product product)
         {
             if (id != product.Id)
             {
@@ -111,6 +111,7 @@ namespace Perkebunan.Controllers
 
             return File(stream, contentType);
         }
+
 
     }
 }
