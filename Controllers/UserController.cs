@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
+using Perkebunan.Models.Dtos;
 
 
 namespace Perkebunan.Controllers
@@ -104,6 +105,16 @@ namespace Perkebunan.Controllers
                 .ToListAsync();
             return Ok(cartItems);
 
+        }
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<User>> GetUserById(Guid userId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok(user);
         }
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<User>> GetUser(Guid id)

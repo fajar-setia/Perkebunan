@@ -1,4 +1,4 @@
-﻿namespace Perkebunan.Models
+﻿namespace Perkebunan.Models.Dtos
 {
     public class LoginDto
     {

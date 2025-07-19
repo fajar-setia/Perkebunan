@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Perkebunan.Models
+namespace Perkebunan.Models.Dtos
 {
     public class CartItemDTO
     {
